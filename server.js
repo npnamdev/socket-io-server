@@ -17,10 +17,34 @@ mongoose.connect('mongodb+srv://root:s0bDv151OKKGsAlf@cluster0.ozrpd5z.mongodb.n
   useUnifiedTopology: true,
 });
 
+const db = mongoose.connection;
+db.once('open', () => {
+    console.log('Connected to MongoDB');
+});
+
+const messageSchema = new mongoose.Schema({
+  message: String,
+  timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', messageSchema);
+
 let inputValue = ''; 
+
+
 
 io.on('connection', (socket) => {
   console.log('Client connected');
+   socket.on('sendMessage', async (data) => {
+    const { message } = data;
+    const newMessage = new Message({ message });
+    try {
+        await newMessage.save();
+        io.emit('newMessage', newMessage);
+    } catch (error) {
+        console.error(error);
+    }
+});
+
 
   socket.emit('updateInput', inputValue);
 
